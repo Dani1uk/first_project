@@ -5,7 +5,8 @@ from bs4 import BeautifulSoup
 import requests
 import lxml
 from datetime import date
-import asyncio
+import logging
+
 
 def create_unique_index():
     try:
@@ -36,6 +37,7 @@ def create_unique_index():
     finally:
         if conn:
             conn.close()
+
 def load_data_in_database():
 
     headers = {
@@ -65,11 +67,13 @@ def load_data_in_database():
         
             connection.autocommit = True
 
+            logging.info(f'News added:{title}')
+
             with connection.cursor() as cursor:
                 cursor.execute("INSERT INTO news (date, title, link) VALUES (to_date(%s, 'DD.MM.YYYY'),%s,%s)",(date , title , link))
             
             print("[INFO] Данные успешно добавлены")
-            return {"message": "Data load complete", "added_count":cursor.rowcount} 
+            return {"message": "Загрузка данных завершена", "added_count":cursor.rowcount} 
     
     except UniqueViolation as e:
         return {"error": f"Duplicate entry: {e}", "status_code": 409} #Возвращаем данные об ошибке
@@ -90,6 +94,7 @@ def creat_table():
             )
         
         conn.autocommit = True
+
 
         with conn.cursor() as cursor:
                 cursor.execute(
@@ -139,7 +144,7 @@ def creat_table():
     finally:
         conn.close()
 
-async def get_news_by_date_range(start_date: date, end_date: date):
+def get_news_by_date_range(start_date: date, end_date: date):
     """Получает новости из базы данных за указанный период."""
     try:
         conn = psycopg2.connect(
@@ -156,9 +161,29 @@ async def get_news_by_date_range(start_date: date, end_date: date):
             )
             rows = cur.fetchall()
             return rows
-    except psycopg2.Error as e:
+    except psycopg2.Error as ex:
         print(f"An error occurred: {ex}")
     finally:
         conn.close()
 
-load_data_in_database()
+def delete_item(news_id: int):
+    """Удалим-ка мы запись из бд"""
+    try:
+        conn = psycopg2.connect(
+                dbname=db_name, 
+                user=user, 
+                password=password, 
+                host=host,
+                port=port
+            )
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM news WHERE news_id = %s",
+                (news_id),
+            )
+            rows = cur.fetchall()
+            return rows
+    except psycopg2.Error as ex:
+        print(f"An error occurred: {ex}")
+    finally:
+        conn.close
