@@ -1,26 +1,17 @@
-from pydantic import BaseModel, Field, EmailStr
-from datetime import date
-from typing import List, Optional
+from sqlalchemy.orm import  DeclarativeBase
+from sqlalchemy import Column, Integer, String, Date
 
-class User(BaseModel):
-    username: str
-    surname: str  
-    user_id: int
-    email: EmailStr = Field(default=None, description="Email пользователя")
+class Base(DeclarativeBase):
+    pass
 
-
-class News(BaseModel):
-    news_id: int
-    date: date
-    title: str
-    link: str
-
-class FavoriteNews(BaseModel):
-    favorite_id: int
-    news_id: int
-    user_id: int
+class News(Base):
+    __tablename__ = "news"
+    news_id = Column(Integer, primary_key=True)
+    date = Column(Date)
+    title = Column(String)
+    link = Column(String)
+  
 
 
-class UserLogin(BaseModel):
-    login: str = Field(default=None, description="Email пользователя")
-    hash_password: str = Field(default=None, description="Пароль пользователя")
+
+
