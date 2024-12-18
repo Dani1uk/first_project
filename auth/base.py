@@ -1,4 +1,4 @@
-from orm import AsyncORM
+from auth.orm import AsyncORM
 from models import User
 
 

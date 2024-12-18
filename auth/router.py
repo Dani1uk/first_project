@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Response, status
-from auth import authenticate_user, create_access_token
-from utils import get_password_hash
-from base import UserBase
+from auth.auth import authenticate_user, create_access_token
+from auth.utils import get_password_hash
+from auth.base import UserBase
 from models import User
-from orm import AsyncORM
-from schemas import EmailModel, SUserAddDB, SUserAuth, SUserRegister
+from auth.orm import AsyncORM
+from auth.schemas import EmailModel, SUserAddDB, SUserAuth, SUserRegister
 from fastapi import Depends
 from database import Base, get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,11 +26,11 @@ async def register_user(user_data: SUserRegister, session: AsyncSession = Depend
     return {'message': 'Вы успешно зарегистрированы!'}
 
 @router.post("/login/")
-async def auth_user(response: Response, user_data: SUserAuth):
-    check = await authenticate_user(email=user_data.email, password=user_data.password)
+async def auth_user(response: Response, user_data: SUserAuth, session: AsyncSession = Depends(get_db)):
+    check = await authenticate_user(session=session ,email=user_data.email, password=user_data.password)
     if check is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='Неверная почта или пароль')
-    access_token = create_access_token({"sub": str(check.id)})
+    access_token = create_access_token({"sub": str(check.user_id)})
     response.set_cookie(key="users_access_token", value=access_token, httponly=True)
     return {'access_token': access_token, 'refresh_token': None}
